@@ -1,0 +1,117 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="km">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily Expense App</title>
+    <!-- link to external CSS file -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>កម្មវិធី​ចំណាយ​ប្រចាំថ្ងៃ</h1>
+
+      <section class="add-form">
+        <label for="desc">ពណ៌នា</label>
+        <input id="desc" type="text" placeholder="ដូចជា: កាហ្វេ, ចំណាយដើម" />
+
+        <label for="amount">ចំនួន (៛)</label>
+        <input id="amount" type="number" placeholder="0" min="0" />
+
+        <div class="buttons">
+          <button id="addBtn" class="btn primary">Add</button>
+          <button id="clearBtn" class="btn">Clear All</button>
+        </div>
+      </section>
+
+      <section class="summary">
+        <div>ចំណាយសរុប: <span id="total">0</span> ៛</div>
+      </section>
+
+      <section class="list">
+        <ul id="items"></ul>
+      </section>
+
+      <footer class="note">* ចុច Delete ដើម្បីលុបកម្មវិធីចំណាយនោះ</footer>
+    </main>
+
+    <script>
+      // Simple JS to make add/delete work and persist to localStorage
+      const descEl = document.getElementById("desc");
+      const amountEl = document.getElementById("amount");
+      const addBtn = document.getElementById("addBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const itemsEl = document.getElementById("items");
+      const totalEl = document.getElementById("total");
+
+      let items = JSON.parse(localStorage.getItem("expenses") || "[]");
+
+      function render() {
+        itemsEl.innerHTML = "";
+        let total = 0;
+        items.forEach((it, idx) => {
+          total += Number(it.amount);
+          const li = document.createElement("li");
+          li.className = "item";
+          li.innerHTML = `
+          <div class="left">
+            <div class="desc">${escapeHtml(it.desc)}</div>
+            <div class="meta">${new Date(it.time).toLocaleString()}</div>
+          </div>
+          <div class="right">
+            <div class="amt">${formatNumber(it.amount)} ៛</div>
+            <button class="btn delete" data-idx="${idx}">Delete</button>
+          </div>
+        `;
+          itemsEl.appendChild(li);
+        });
+        totalEl.textContent = formatNumber(total);
+        localStorage.setItem("expenses", JSON.stringify(items));
+      }
+
+      function formatNumber(n) {
+        return Number(n).toLocaleString();
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      addBtn.addEventListener("click", () => {
+        const desc = descEl.value.trim();
+        const amount = amountEl.value.trim();
+        if (!desc || !amount || Number(amount) <= 0) {
+          alert("សូម​បំពេញ​ពណ៌នា និងចំនួន (ចំនួន > 0)");
+          return;
+        }
+        items.unshift({ desc, amount: Number(amount), time: Date.now() });
+        descEl.value = "";
+        amountEl.value = "";
+        render();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        if (!confirm("ច្បាស់ចង់លុបចេញទាំងអស់?")) return;
+        items = [];
+        render();
+      });
+
+      itemsEl.addEventListener("click", (e) => {
+        if (e.target.matches(".btn.delete")) {
+          const idx = Number(e.target.dataset.idx);
+          items.splice(idx, 1);
+          render();
+        }
+      });
+
+      // initial render
+      render();
+    </script>
+  </body>
+</html>
